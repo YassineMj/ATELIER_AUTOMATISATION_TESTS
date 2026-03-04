@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monitoring API Agify — Dashboard Premium</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    /* ── Variables & Mode Sombre ── */
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #1a202c;
+      --text-secondary: #4a5568;
+      --muted: #718096;
+      --accent: #0d9488;
+      --ok: #059669;
+      --ok-bg: #ecfdf5;
+      --warn: #d97706;
+      --warn-bg: #fffbeb;
+      --bad: #dc2626;
+      --bad-bg: #fef2f2;
+      --info: #0284c7;
+      --info-bg: #f0f9ff;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+      --transition: 0.3s ease;
+    }
+    
+    body.dark-mode {
+      --bg: #0f1419;
+      --surface: #1a1f2e;
+      --card-border: #2a3142;
+      --text: #e5e7eb;
+      --text-secondary: #9ca3af;
+      --muted: #6b7280;
+      --ok-bg: rgba(5, 150, 105, 0.1);
+      --warn-bg: rgba(217, 119, 6, 0.1);
+      --bad-bg: rgba(220, 38, 38, 0.1);
+      --info-bg: rgba(2, 132, 199, 0.1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      transition: background-color var(--transition);
+    }
+
+    /* ── Header Premium ── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+      margin-bottom: 32px;
+      padding: 24px 0;
+      border-bottom: 2px solid var(--card-border);
+    }
+    
+    header h1 {
+      font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+    }
+    
+    header h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--info));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Buttons ── */
+    .btn-group {
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    
+    button, a.btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #059669);
+      color: white;
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
+    }
+    
+    .btn-primary.loading {
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--card-border);
+    }
+    
+    .btn-dark-toggle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 20px;
+    }
+
+    /* ── Cards ── */
+    .wrapper { max-width: 1400px; margin: 0 auto; padding: 32px 20px 70px; }
+    
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      transition: all var(--transition);
+    }
+    
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ── KPI Grid ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    
+    .kpi {
+      background: var(--card-border);
+      padding: 24px;
+      border-radius: var(--radius);
+      text-align: center;
+      transition: all var(--transition);
+    }
+    
+    .kpi:hover {
+      transform: translateY(-4px);
+    }
+    
+    .kpi .value {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    
+    .kpi .label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+    }
+    
+    .kpi.ok { background: var(--ok-bg); --kpi-color: var(--ok); }
+    .kpi.warn { background: var(--warn-bg); --kpi-color: var(--warn); }
+    .kpi.bad { background: var(--bad-bg); --kpi-color: var(--bad); }
+    .kpi.info { background: var(--info-bg); --kpi-color: var(--info); }
+    
+    .kpi .value {
+      color: var(--kpi-color);
+    }
+
+    /* ── Graphiques ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 350px;
+    }
+
+    /* ── Tableau ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 14px;
+      border-bottom: 2px solid var(--card-border);
+      background: var(--card-border);
+    }
+    
+    td {
+      padding: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    
+    tr:hover td {
+      background: var(--card-border);
+    }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .badge.pass {
+      background: var(--ok-bg);
+      color: var(--ok);
+    }
+    
+    .badge.fail {
+      background: var(--bad-bg);
+      color: var(--bad);
+    }
+
+    /* ── Section Spacing ── */
+    .section {
+      margin-bottom: 32px;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+    
+    .empty-state .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    
+    .empty-state h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto 28px;
+    }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    
+    .btn-primary.loading .spinner {
+      display: inline-block;
+    }
+    
+    .btn-primary.loading .icon {
+      display: none;
+    }
+
+    /* ── Auto-refresh Toggle ── */
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    
+    .toggle-checkbox {
+      width: 44px;
+      height: 24px;
+      background: var(--card-border);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: background-color var(--transition);
+    }
+    
+    .toggle-checkbox:checked {
+      background: var(--accent);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .wrapper { padding: 16px 12px 40px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; align-items: flex-start; }
+      header h1 { font-size: 22px; }
+      .btn-group { width: 100%; }
+    }
+
+    /* ── Timestamp ── */
+    .ts {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+      font-weight: 500;
+    }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-bar input {
+      padding: 10px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── Header ── -->
+  <header>
+    <h1>📊 Monitoring <span>Agify API</span></h1>
+    <div class="btn-group">
+      <button class="btn-primary" id="btnRun" onclick="launchRun()" title="Exécuter un nouveau test">
+        <span class="icon">▶️</span>
+        <span class="spinner"></span>
+        <span>Lancer Test</span>
+      </button>
+      <a href="/export/csv" class="btn-secondary" title="Télécharger en CSV">📥 CSV</a>
+      <a href="/export/json" class="btn-secondary" title="Télécharger en JSON">📥 JSON</a>
+      <a href="/analytics" class="btn-secondary" title="Statistiques avancées">📈 Analytique</a>
+      <a href="/testlogs" class="btn-secondary" title="Détail des tests">📋 Logs</a>
+      <a href="/settings" class="btn-secondary" title="Configuration">⚙️ Config</a>
+      <button class="btn-dark-toggle" onclick="toggleDarkMode()" title="Mode sombre">🌙</button>
+    </div>
+  </header>
+
+  {% if latest is none %}
+  <!-- ════════════════════════════════════════════════════════════════
+       ÉTAT VIDE
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="card empty-state">
+    <div class="icon">🔮</div>
+    <h2>Aucun test exécuté</h2>
+    <p>Cliquez sur le bouton "Lancer Test" pour démarrer un run de monitoring sur l'API Agify.</p>
+    <button class="btn-primary" onclick="launchRun()" style="margin: 20px auto 0;">
+      <span>▶️ Commencer</span>
+    </button>
+  </div>
+
+  {% else %}
+  <!-- ════════════════════════════════════════════════════════════════
+       DERNIER RUN + STATS
+       ════════════════════════════════════════════════════════════════ -->
+  {% set run = latest.raw_tests_json %}
+  {% set s   = run.summary %}
+
+  <div class="section">
+    <div class="card">
+      <h2>
+        <span class="dot" style="background:{{ '#059669' if s.failed == 0 else '#dc2626' }}"></span>
+        Dernier Run — <span class="ts">🕒 {{ run.timestamp }}</span>
+      </h2>
+
+      <!-- ── KPIs ── -->
+      <div class="kpi-grid">
+        <div class="kpi ok">
+          <div class="value">{{ s.passed }}/6</div>
+          <div class="label">Tests Réussis</div>
+        </div>
+        <div class="kpi {{ 'bad' if s.failed > 0 else 'ok' }}">
+          <div class="value">{{ s.failed }}</div>
+          <div class="label">Tests Échoués</div>
+        </div>
+        <div class="kpi {{ 'bad' if s.error_rate > 0.3 else ('warn' if s.error_rate > 0 else 'ok') }}">
+          <div class="value">{{ (s.error_rate * 100) | round(1) }}%</div>
+          <div class="label">Taux d'Erreur</div>
+        </div>
+        <div class="kpi info">
+          <div class="value">{{ s.latency_ms_avg | round(0) | int }}</div>
+          <div class="label">Latence Moy (ms)</div>
+        </div>
+        <div class="kpi info">
+          <div class="value">{{ s.latency_ms_p95 | round(0) | int }}</div>
+          <div class="label">P95 (ms)</div>
+        </div>
+      </div>
+
+      <!-- ── Détail des Tests ── -->
+      <h3 style="margin-top: 28px; margin-bottom: 16px; font-size: 16px;">📋 Détail des Tests</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Test</th>
+            <th>Statut</th>
+            <th>Latence (ms)</th>
+            <th>Détails</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in run.tests %}
+          <tr>
+            <td><strong>{{ t.name }}</strong></td>
+            <td>
+              <span class="badge {{ 'pass' if t.status == 'PASS' else 'fail' }}">
+                {{ t.status }}
+              </span>
+            </td>
+            <td>{{ t.latency_ms if t.latency_ms is not none else '—' }}</td>
+            <td style="color:var(--text-secondary); font-size:13px;">{{ t.details }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       GRAPHIQUES
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="charts-grid">
+      <div class="card">
+        <h2>📈 Taux de Succès</h2>
+        <div class="chart-container">
+          <canvas id="successChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>⏱️ Latence Moyenne</h2>
+        <div class="chart-container">
+          <canvas id="latencyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       HISTORIQUE & CONTRÔLES
+       ════════════════════════════════════════════════════════════════ -->
+  {% if history | length > 1 %}
+  <div class="section">
+    <div class="card">
+      <h2>📜 Historique des Runs</h2>
+      <div class="filter-bar">
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+          <span>Auto-refresh (30s)</span>
+        </label>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date/Heure</th>
+            <th>✅ Réussis</th>
+            <th>❌ Échoués</th>
+            <th>Taux d'Erreur</th>
+            <th>Latence Moy.</th>
+            <th>P95</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in history %}
+          <tr>
+            <td><strong>{{ r.id }}</strong></td>
+            <td>{{ r.timestamp }}</td>
+            <td style="color:var(--ok);">{{ r.passed }}</td>
+            <td style="color:{{ 'var(--bad)' if r.failed > 0 else 'var(--ok)' }};">{{ r.failed }}</td>
+            <td>
+              <span class="badge {{ 'fail' if r.error_rate > 0.3 else 'pass' }}">
+                {{ (r.error_rate * 100) | round(1) }}%
+              </span>
+            </td>
+            <td>{{ r.latency_avg | round(1) }} ms</td>
+            <td>{{ r.latency_p95 | round(1) }} ms</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+</div>
+
+<!-- ── Scripts ── -->
+<script>
+  let autoRefreshTimer = null;
+  let charts = {};
+
+  // Dark Mode
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    if (Object.keys(charts).length > 0) reloadCharts();
+  }
+
+  // Charger le mode sauvegardé
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+
+  // Lancer un run
+  async function launchRun() {
+    const btn = document.getElementById('btnRun');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    
+    try {
+      const resp = await fetch('/run');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      setTimeout(() => location.reload(), 1000);
+    } catch (err) {
+      alert('Erreur lors du run : ' + err.message);
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  // Auto-refresh
+  function toggleAutoRefresh() {
+    const checkbox = document.getElementById('autoRefresh');
+    if (checkbox.checked) {
+      autoRefreshTimer = setInterval(() => location.reload(), 30000);
+    } else {
+      clearInterval(autoRefreshTimer);
+    }
+  }
+
+  // Initialiser les graphiques
+  async function initCharts() {
+    try {
+      const resp = await fetch('/api/runs?limit=30');
+      const data = await resp.json();
+      const runs = data.runs;
+
+      if (runs.length === 0) return;
+
+      const labels = runs.map(r => new Date(r.timestamp).toLocaleDateString('fr-FR', {
+        month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      }));
+      
+      const ctx1 = document.getElementById('successChart');
+      const ctx2 = document.getElementById('latencyChart');
+
+      if (!ctx1 || !ctx2) return;
+
+      const isDark = document.body.classList.contains('dark-mode');
+      const textColor = isDark ? '#e5e7eb' : '#1a202c';
+      const gridColor = isDark ? '#2a3142' : '#e2e8f0';
+
+      charts.success = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Tests Réussis / 6',
+            data: runs.map(r => r.passed),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#059669'
+          }, {
+            label: 'Tests Échoués',
+            data: runs.map(r => r.failed),
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#dc2626'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor } } },
+          scales: {
+            y: { beginAtZero: true, max: 6, ticks: { color: textColor }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+
+      charts.latency = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Latence Moyenne (ms)',
+            data: runs.map(r => r.latency_avg),
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#0284c7'
+          }, {
+            label: 'P95 (ms)',
+            data: runs.map(r => r.latency_p95),
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124, 58, 237, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#7c3aed'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor } } },
+          scales: {
+            y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Erreur chargement graphiques:', err);
+    }
+  }
+
+  function reloadCharts() {
+    Object.values(charts).forEach(chart => chart.destroy());
+    charts = {};
+    initCharts();
+  }
+
+  // Initialisation
+  document.addEventListener('DOMContentLoaded', initCharts);
+</script>
+</body>
+</html>

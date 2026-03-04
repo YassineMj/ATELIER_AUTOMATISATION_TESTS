@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Statistiques Avancées — Agify Monitoring</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #1a202c;
+      --text-secondary: #4a5568;
+      --muted: #718096;
+      --accent: #0d9488;
+      --ok: #059669;
+      --warn: #d97706;
+      --bad: #dc2626;
+      --info: #0284c7;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    body.dark-mode {
+      --bg: #0f1419;
+      --surface: #1a1f2e;
+      --card-border: #2a3142;
+      --text: #e5e7eb;
+      --text-secondary: #9ca3af;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: 0.3s;
+    }
+
+    .wrapper { max-width: 1400px; margin: 0 auto; padding: 32px 20px; }
+    
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--card-border);
+    }
+
+    header h1 { font-size: 28px; font-weight: 800; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--card-border);
+      overflow-x: auto;
+    }
+
+    .nav-tabs a {
+      padding: 12px 16px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      border-bottom: 3px solid transparent;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    .nav-tabs a:hover, .nav-tabs a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      transition: 0.3s;
+    }
+
+    .card:hover { box-shadow: var(--shadow-lg); }
+
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: var(--card-border);
+      padding: 20px;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-bottom: 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th {
+      text-align: left;
+      padding: 14px;
+      border-bottom: 2px solid var(--card-border);
+      background: var(--card-border);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    tr:hover td { background: var(--card-border); }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge.high { background: rgba(5, 150, 105, 0.2); color: var(--ok); }
+    .badge.medium { background: rgba(217, 119, 6, 0.2); color: var(--warn); }
+    .badge.low { background: rgba(220, 38, 38, 0.2); color: var(--bad); }
+
+    .btn {
+      padding: 10px 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+    @media (max-width: 768px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .chart-container { height: 300px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <h1>📊 Statistiques Avancées</h1>
+    <button onclick="toggleDarkMode()" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--card-border); cursor: pointer; font-size: 20px;">🌙</button>
+  </header>
+
+  <div class="nav-tabs">
+    <a href="/dashboard" class="active">Home</a>
+    <a onclick="loadStats()">Statistiques</a>
+    <a onclick="loadTrends()">Tendances</a>
+    <a onclick="loadPerformance()">Performance</a>
+    <a onclick="loadComparison()">Comparaison</a>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       STATISTIQUES GLOBALES
+       ════════════════════════════════════════════════════════════════ -->
+  <div id="statsSection">
+    <div class="card">
+      <h2>📈 Vue Globale</h2>
+      <div class="stat-grid" id="statsGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2>⏱️ Distribution des Latences</h2>
+      <div class="chart-container">
+        <canvas id="latencyDistribution"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>✅ Taux de Succès par Test</h2>
+      <div class="chart-container">
+        <canvas id="testSuccessChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       TENDANCES
+       ════════════════════════════════════════════════════════════════ -->
+  <div id="trendsSection" style="display: none;">
+    <div class="card">
+      <h2>📊 Tendances d'Erreur (7 derniers jours)</h2>
+      <div class="chart-container">
+        <canvas id="errorTrendChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🏃 Tendance des Performances</h2>
+      <div class="chart-container">
+        <canvas id="performanceTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       PERFORMANCE DÉTAILLÉE
+       ════════════════════════════════════════════════════════════════ -->
+  <div id="performanceSection" style="display: none;">
+    <div class="card">
+      <h2>🎯 Métriques par Test</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Test</th>
+            <th>Succès (%)</th>
+            <th>Ratés (%)</th>
+            <th>Latence Moy.</th>
+            <th>Perf.</th>
+          </tr>
+        </thead>
+        <tbody id="testMetricsTable"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>⚡ Percentiles de Latence</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Percentile</th>
+            <th>Latence (ms)</th>
+            <th>Classification</th>
+          </tr>
+        </thead>
+        <tbody id="percentilesTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       COMPARAISON
+       ════════════════════════════════════════════════════════════════ -->
+  <div id="comparisonSection" style="display: none;">
+    <div class="card">
+      <h2>⚖️ Comparaison Entre Runs</h2>
+      <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <input type="number" id="runId1" placeholder="Run 1" style="padding: 8px; border: 1px solid var(--card-border); border-radius: var(--radius);">
+        <input type="number" id="runId2" placeholder="Run 2" style="padding: 8px; border: 1px solid var(--card-border); border-radius: var(--radius);">
+        <button onclick="compareRuns()" class="btn">Comparer</button>
+      </div>
+      <div id="comparisonResult"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<script>
+  let charts = {};
+
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    Object.values(charts).forEach(c => c.destroy?.());
+    loadStats();
+  }
+
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+
+  async function loadStats() {
+    try {
+      const resp = await fetch('/api/stats');
+      const stats = await resp.json();
+
+      const statsGrid = document.getElementById('statsGrid');
+      statsGrid.innerHTML = `
+        <div class="stat-box">
+          <div class="stat-value">${stats.total_runs}</div>
+          <div class="stat-label">Total Runs</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${stats.avg_passed.toFixed(1)}/6</div>
+          <div class="stat-label">Moy. Réussis</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${(stats.avg_error_rate * 100).toFixed(2)}%</div>
+          <div class="stat-label">Taux Erreur Moy</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${stats.avg_latency_avg.toFixed(0)}ms</div>
+          <div class="stat-label">Latence Moy</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${stats.avg_latency_p95.toFixed(0)}ms</div>
+          <div class="stat-label">P95</div>
+        </div>
+      `;
+
+      // Charts
+      await loadCharts();
+      document.getElementById('statsSection').style.display = 'block';
+      document.getElementById('trendsSection').style.display = 'none';
+      document.getElementById('performanceSection').style.display = 'none';
+      document.getElementById('comparisonSection').style.display = 'none';
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadCharts() {
+    const resp = await fetch('/api/runs?limit=30');
+    const data = await resp.json();
+    const runs = data.runs;
+
+    if (runs.length === 0) return;
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#e5e7eb' : '#1a202c';
+    const gridColor = isDark ? '#2a3142' : '#e2e8f0';
+
+    // Latency Distribution
+    const latencies = runs.flatMap(r => [r.latency_avg, r.latency_p95]);
+    const ctx1 = document.getElementById('latencyDistribution');
+    if (ctx1) {
+      charts.latency = new Chart(ctx1, {
+        type: 'histogram',
+        data: {
+          datasets: [{
+            label: 'Distribution Latences',
+            data: latencies,
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.5)'
+          }]
+        },
+        options: {
+          indexAxis: 'x',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: textColor } }
+          },
+          scales: {
+            y: { ticks: { color: textColor }, grid: { color: gridColor } },
+            x: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+    }
+  }
+
+  async function loadTrends() {
+    document.getElementById('statsSection').style.display = 'none';
+    document.getElementById('trendsSection').style.display = 'block';
+    document.getElementById('performanceSection').style.display = 'none';
+
+    const resp = await fetch('/api/runs?limit=50');
+    const data = await resp.json();
+    const runs = data.runs.slice(0, 30);
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#e5e7eb' : '#1a202c';
+    const gridColor = isDark ? '#2a3142' : '#e2e8f0';
+
+    const labels = runs.map(r => new Date(r.timestamp).toLocaleDateString('fr-FR', { day: '2-digit', hour: '2-digit', minute: '2-digit' }));
+
+    const ctx = document.getElementById('errorTrendChart');
+    charts.errorTrend = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Taux d\'Erreur (%)',
+          data: runs.map(r => r.error_rate * 100),
+          borderColor: '#dc2626',
+          backgroundColor: 'rgba(220, 38, 38, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: textColor } } },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { color: textColor }, grid: { color: gridColor } },
+          x: { ticks: { color: textColor }, grid: { color: gridColor } }
+        }
+      }
+    });
+  }
+
+  async function loadPerformance() {
+    document.getElementById('statsSection').style.display = 'none';
+    document.getElementById('trendsSection').style.display = 'none';
+    document.getElementById('performanceSection').style.display = 'block';
+
+    const resp = await fetch('/api/performance');
+    if (resp.ok) {
+      const data = await resp.json();
+      const tbody = document.getElementById('testMetricsTable');
+      tbody.innerHTML = data.tests.map(t => `
+        <tr>
+          <td>${t.name}</td>
+          <td>${t.success_rate.toFixed(1)}%</td>
+          <td>${(100 - t.success_rate).toFixed(1)}%</td>
+          <td>${t.avg_latency.toFixed(0)}ms</td>
+          <td><span class="badge ${t.success_rate > 90 ? 'high' : t.success_rate > 70 ? 'medium' : 'low'}">${t.success_rate > 90 ? 'Bon' : t.success_rate > 70 ? 'Moyen' : 'Faible'}</span></td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  async function compareRuns() {
+    const id1 = document.getElementById('runId1').value;
+    const id2 = document.getElementById('runId2').value;
+
+    if (!id1 || !id2) { alert('Entrer 2 IDs de run'); return; }
+
+    const resp = await fetch(`/api/compare/${id1}/${id2}`);
+    const data = await resp.json();
+
+    const result = document.getElementById('comparisonResult');
+    result.innerHTML = `
+      <div class="card" style="margin-top: 20px;">
+        <table>
+          <thead>
+            <tr><th>Métrique</th><th>Run ${id1}</th><th>Run ${id2}</th><th>Delta</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Tests Réussis</strong></td>
+              <td>${data.run1.passed}</td>
+              <td>${data.run2.passed}</td>
+              <td>${data.differences.passed_delta > 0 ? '+' : ''}${data.differences.passed_delta}</td>
+            </tr>
+            <tr>
+              <td><strong>Erreur Rate</strong></td>
+              <td>${(data.run1.error_rate*100).toFixed(2)}%</td>
+              <td>${(data.run2.error_rate*100).toFixed(2)}%</td>
+              <td>${data.differences.error_rate_delta > 0 ? '+' : ''}${(data.differences.error_rate_delta*100).toFixed(2)}%</td>
+            </tr>
+            <tr>
+              <td><strong>Latence Moy.</strong></td>
+              <td>${data.run1.latency_avg.toFixed(0)}ms</td>
+              <td>${data.run2.latency_avg.toFixed(0)}ms</td>
+              <td>${data.differences.latency_avg_delta > 0 ? '+' : ''}${data.differences.latency_avg_delta.toFixed(0)}ms</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  document.addEventListener('DOMContentLoaded', loadStats);
+</script>
+</body>
+</html>

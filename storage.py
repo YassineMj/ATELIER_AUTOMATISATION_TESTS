@@ -131,3 +131,34 @@ def get_latest_runs(limit: int = 10) -> List[Dict[str, Any]]:
         results.append(row_dict)
 
     return results
+
+
+# ======================================================================
+# Suppression des anciens runs
+# ======================================================================
+def clear_old_runs(days: int = 30) -> int:
+    """
+    Supprime les runs de plus de N jours.
+    
+    Args:
+        days: nombre de jours à conserver (par défaut 30)
+    
+    Returns:
+        Nombre de runs supprimés
+    """
+    from datetime import datetime, timedelta
+    
+    cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+    
+    conn = _get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM runs WHERE timestamp < ?",
+            (cutoff_date,)
+        )
+        deleted = cursor.rowcount
+        conn.commit()
+        return deleted
+    finally:
+        conn.close()

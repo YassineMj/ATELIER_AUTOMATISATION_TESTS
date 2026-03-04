@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Détail des Tests — Agify Monitoring</title>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #1a202c;
+      --text-secondary: #4a5568;
+      --muted: #718096;
+      --accent: #0d9488;
+      --ok: #059669;
+      --bad: #dc2626;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    body.dark-mode {
+      --bg: #0f1419;
+      --surface: #1a1f2e;
+      --card-border: #2a3142;
+      --text: #e5e7eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrapper { max-width: 1400px; margin: 0 auto; padding: 32px 20px; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--card-border);
+    }
+
+    header h1 { font-size: 28px; font-weight: 800; }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filters input,
+    .filters select {
+      padding: 10px 12px;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 24px;
+      background: var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    .test-item {
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border-left: 4px solid;
+    }
+
+    .test-item.pass {
+      border-left-color: var(--ok);
+    }
+
+    .test-item.fail {
+      border-left-color: var(--bad);
+    }
+
+    .test-item h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .test-item .status {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .test-item .status.pass {
+      background: rgba(5, 150, 105, 0.2);
+      color: var(--ok);
+    }
+
+    .test-item .status.fail {
+      background: rgba(220, 38, 38, 0.2);
+      color: var(--bad);
+    }
+
+    .test-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .detail-box {
+      background: var(--surface);
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--card-border);
+    }
+
+    .detail-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--card-border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -35px;
+      top: 3px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid var(--surface);
+    }
+
+    .pagination {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid var(--card-border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .pagination button:hover,
+    .pagination button.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <h1>📋 Détail des Tests</h1>
+    <button onclick="toggleDarkMode()" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--card-border); cursor: pointer; font-size: 20px;">🌙</button>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       FILTRES
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="filters">
+    <input type="text" placeholder="Rechercher un test..." id="searchInput" onkeyup="filterTests()">
+    <select id="statusFilter" onchange="filterTests()">
+      <option value="">Tous les statuts</option>
+      <option value="PASS">Réussis</option>
+      <option value="FAIL">Échoués</option>
+    </select>
+    <select id="runFilter" onchange="loadRun()">
+      <option value="latest">Dernier run</option>
+      <option value="custom">Sélectionner un run</option>
+    </select>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       DETAILS DES TESTS
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="card" id="testsContainer">
+    <div class="card-body" id="testsList"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       HISTORIQUE DES ERREURS
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-header">
+      <h2>🔍 Historique des Erreurs</h2>
+    </div>
+    <div class="card-body" id="errorHistory"></div>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+
+</div>
+
+<script>
+  let allRuns = [];
+  let filteredTests = [];
+
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+  }
+
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+
+  async function loadRuns() {
+    try {
+      const resp = await fetch('/api/runs?limit=100');
+      const data = await resp.json();
+      allRuns = data.runs;
+      loadLatestRun();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadLatestRun() {
+    if (allRuns.length === 0) return;
+
+    const run = allRuns[0];
+    const runData = run.raw_tests_json;
+
+    const testsList = document.getElementById('testsList');
+    testsList.innerHTML = runData.tests.map((test, idx) => `
+      <div class="test-item ${test.status.toLowerCase()}">
+        <h3>
+          ${test.name}
+          <span class="status ${test.status.toLowerCase()}">${test.status}</span>
+        </h3>
+        <div class="test-details">
+          <div class="detail-box">
+            <div class="detail-label">Latence</div>
+            <div class="detail-value">${test.latency_ms !== null ? test.latency_ms + 'ms' : 'N/A'}</div>
+          </div>
+          <div class="detail-box">
+            <div class="detail-label">Run ID</div>
+            <div class="detail-value">#${run.id}</div>
+          </div>
+          <div class="detail-box">
+            <div class="detail-label">Timestamp</div>
+            <div class="detail-value">${new Date(run.timestamp).toLocaleString('fr-FR')}</div>
+          </div>
+        </div>
+        <div style="color: var(--muted); font-size: 13px; margin-top: 12px;">
+          <strong>Détails:</strong> ${test.details}
+        </div>
+      </div>
+    `).join('');
+
+    filteredTests = runData.tests;
+  }
+
+  function filterTests() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+
+    const testsList = document.getElementById('testsList');
+    const tests = Array.from(testsList.querySelectorAll('.test-item'));
+
+    tests.forEach(test => {
+      const name = test.querySelector('h3').textContent.toLowerCase();
+      const testStatus = test.querySelector('.status').textContent;
+
+      const matchesSearch = name.includes(search);
+      const matchesStatus = !status || testStatus === status;
+
+      test.style.display = (matchesSearch && matchesStatus) ? 'block' : 'none';
+    });
+  }
+
+  async function loadErrorHistory() {
+    const errorHistory = document.getElementById('errorHistory');
+    
+    const failedTests = allRuns
+      .flatMap(run => run.raw_tests_json.tests.map(t => ({...t, runId: run.id, timestamp: run.timestamp})))
+      .filter(t => t.status === 'FAIL')
+      .slice(0, 50);
+
+    if (failedTests.length === 0) {
+      errorHistory.innerHTML = '<p style="color: var(--muted);">Aucune erreur détectée!</p>';
+      return;
+    }
+
+    errorHistory.innerHTML = `
+      <div class="timeline">
+        ${failedTests.map(test => `
+          <div class="timeline-item">
+            <h4 style="margin-bottom: 8px;">${test.name}</h4>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 8px;">
+              Run #${test.runId} - ${new Date(test.timestamp).toLocaleString('fr-FR')}
+            </p>
+            <p style="font-size: 13px;">${test.details}</p>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadRuns();
+    loadErrorHistory();
+  });
+</script>
+</body>
+</html>

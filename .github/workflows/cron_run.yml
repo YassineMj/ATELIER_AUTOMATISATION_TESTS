@@ -13,5 +13,5 @@ jobs:
     steps:
       - name: Lancer un run de tests via l'API
         run: |
-          curl -s https://SofChel.pythonanywhere.com/run
+          curl -s https://yassine48moujahid.pythonanywhere.com/run
           echo "✅ Run de tests déclenché avec succès."

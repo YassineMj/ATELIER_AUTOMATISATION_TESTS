@@ -10,6 +10,7 @@ Ce module fournit les fonctions nécessaires pour :
 import json
 import sqlite3
 from pathlib import Path
+from typing import List, Dict, Any
 
 # Chemin de la base de données, placée à la racine du projet
 DB_PATH = Path(__file__).resolve().parent / "monitoring.db"
@@ -96,7 +97,7 @@ def save_run(run_data: dict) -> None:
 # ======================================================================
 # Récupération des derniers runs
 # ======================================================================
-def get_latest_runs(limit: int = 10) -> list[dict]:
+def get_latest_runs(limit: int = 10) -> List[Dict[str, Any]]:
     """
     Retourne les *limit* derniers runs, du plus récent au plus ancien.
 

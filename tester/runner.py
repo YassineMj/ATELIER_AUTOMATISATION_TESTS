@@ -12,6 +12,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean, quantiles
+from typing import List, Dict, Any
 
 # ── Ajustement du sys.path pour pouvoir importer storage (racine) et tester.tests ──
 # La racine du projet est le parent du dossier `tester/`
@@ -40,7 +41,7 @@ ALL_TESTS = [
 ]
 
 
-def _compute_p95(latencies: list[float]) -> float:
+def _compute_p95(latencies: List[float]) -> float:
     """
     Calcule le 95ème percentile d'une liste de latences.
 
@@ -57,7 +58,7 @@ def _compute_p95(latencies: list[float]) -> float:
     return round(q[18], 2)  # index 18 = 95ème percentile
 
 
-def execute_run() -> dict:
+def execute_run() -> Dict[str, Any]:
     """
     Orchestre un run complet :
       1. Exécute chaque test séquentiellement.
@@ -75,7 +76,7 @@ def execute_run() -> dict:
         }
     """
     # ── 1. Exécution des tests ──
-    test_results: list[dict] = []
+    test_results: List[Dict[str, Any]] = []
     for test_fn in ALL_TESTS:
         result = test_fn()
         test_results.append(result)

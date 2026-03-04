@@ -7,6 +7,7 @@ avec gestion du timeout, du retry automatique, et des erreurs HTTP courantes
 """
 
 import time
+from typing import Optional, Union, List, Dict, Any
 import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError
 
@@ -37,21 +38,21 @@ class APIClient:
     # ------------------------------------------------------------------
     # Méthode principale
     # ------------------------------------------------------------------
-    def get(self, endpoint: str, params: dict | None = None) -> dict:
+    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Effectue une requête GET et retourne un dictionnaire normalisé.
 
         Returns:
             {
                 "latency_ms":  float  — durée de la requête en millisecondes,
-                "status_code": int | None — code HTTP reçu (None si aucune réponse),
-                "json":        dict | list | None — corps JSON décodé,
-                "error":       str | None — message d'erreur éventuel,
+                "status_code": Optional[int] — code HTTP reçu (None si aucune réponse),
+                "json":        Union[dict, list, None] — corps JSON décodé,
+                "error":       Optional[str] — message d'erreur éventuel,
             }
         """
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         attempt = 0
-        last_error: str | None = None
+        last_error: Optional[str] = None
 
         # Boucle de retry : tentative initiale + max_retries
         while attempt <= self.max_retries:

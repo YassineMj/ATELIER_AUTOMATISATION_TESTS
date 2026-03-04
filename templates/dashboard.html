@@ -1,39 +1,363 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>API Test Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monitoring API Agify — Dashboard</title>
   <style>
-    body { font-family: sans-serif; background: #0b1020; color: #e9edff; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #555; padding: 8px; text-align: left; }
-    th { background-color: #23305c; }
-    .pass { color: #62d6a0; font-weight: bold; }
-    .fail { color: #ff6b7a; font-weight: bold; }
+    /* ── Variables & Reset ── */
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #1a202c;
+      --text-secondary: #4a5568;
+      --muted: #718096;
+      --accent: #0d9488;
+      --accent-light: #ccfbf1;
+      --ok: #059669;
+      --ok-bg: #ecfdf5;
+      --warn: #d97706;
+      --warn-bg: #fffbeb;
+      --bad: #dc2626;
+      --bad-bg: #fef2f2;
+      --info: #0284c7;
+      --info-bg: #f0f9ff;
+      --line: #e2e8f0;
+      --radius: 16px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.04);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.06);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .wrapper { max-width: 1100px; margin: 0 auto; padding: 32px 20px 70px; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--line);
+    }
+    header h1 {
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    header h1 span { color: var(--accent); }
+
+    /* ── Bouton principal ── */
+    .btn-run {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 26px;
+      font-size: 14px; font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border: none; border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(13,148,136,0.3);
+      transition: all .2s ease;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .btn-run:hover {
+      background: #0f766e;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(13,148,136,0.4);
+    }
+    .btn-run:active { transform: scale(0.97); }
+    .btn-run.loading { opacity: .55; pointer-events: none; }
+    .btn-run .icon { font-size: 16px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      box-shadow: var(--shadow);
+    }
+    .card h2 {
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .card h2 .dot {
+      width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* ── KPI Grid ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi {
+      border-radius: 14px;
+      padding: 20px 18px;
+      text-align: center;
+      border: 1px solid var(--card-border);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    .kpi .value {
+      font-size: 32px; font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1px;
+    }
+    .kpi .label {
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .8px;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    .kpi.ok          { background: var(--ok-bg); }
+    .kpi.ok .value   { color: var(--ok); }
+    .kpi.warn        { background: var(--warn-bg); }
+    .kpi.warn .value { color: var(--warn); }
+    .kpi.bad         { background: var(--bad-bg); }
+    .kpi.bad .value  { color: var(--bad); }
+    .kpi.info        { background: var(--info-bg); }
+    .kpi.info .value { color: var(--info); }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+      text-align: left; font-size: 11px; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--muted); font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--line);
+      background: #f7fafc;
+    }
+    th:first-child { border-radius: 8px 0 0 0; }
+    th:last-child  { border-radius: 0 8px 0 0; }
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fafc; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+    }
+    .badge.pass { background: var(--ok-bg); color: var(--ok); border: 1px solid #a7f3d0; }
+    .badge.fail { background: var(--bad-bg); color: var(--bad); border: 1px solid #fecaca; }
+
+    /* ── Section spacing ── */
+    .section { margin-bottom: 28px; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 80px 20px;
+    }
+    .empty-state .icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-state h2 {
+      font-size: 22px; margin-bottom: 10px;
+      text-transform: none; letter-spacing: 0;
+    }
+    .empty-state p { color: var(--muted); max-width: 440px; margin: 0 auto 28px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .wrapper { padding: 16px 12px 40px; }
+      .card { padding: 18px 16px; }
+    }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    .btn-run.loading .spinner { display: inline-block; }
+    .btn-run.loading .icon { display: none; }
+
+    /* ── Timestamp ── */
+    .ts { color: var(--muted); font-size: 13px; margin-bottom: 18px; font-weight: 500; }
   </style>
 </head>
 <body>
-  <h1>Dashboard API Tests</h1>
-  <h2>Derniers runs</h2>
-  <table>
-    <tr>
-      <th>Timestamp</th>
-      <th>Passed</th>
-      <th>Failed</th>
-      <th>Error rate</th>
-      <th>Latency avg (ms)</th>
-      <th>Latency p95 (ms)</th>
-    </tr>
-    {% for run in runs %}
-    <tr>
-      <td>{{ run.timestamp }}</td>
-      <td class="pass">{{ run.passed }}</td>
-      <td class="fail">{{ run.failed }}</td>
-      <td>{{ '%.2f'|format(run.error_rate) }}</td>
-      <td>{{ run.latency_avg }}</td>
-      <td>{{ run.latency_p95 }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+<div class="wrapper">
+
+  <!-- ── Header ── -->
+  <header>
+    <h1>📊 Monitoring <span>Agify API</span></h1>
+    <button class="btn-run" id="btnRun" onclick="launchRun()">
+      <span class="icon">▶</span>
+      <span class="spinner"></span>
+      Lancer un nouveau test
+    </button>
+  </header>
+
+  {% if latest is none %}
+  <!-- ════════════════════════════════════════════════════════════════
+       ÉTAT VIDE — aucun run n'a encore été lancé
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="card empty-state">
+    <div class="icon">🔮</div>
+    <h2>Aucun test exécuté</h2>
+    <p>Cliquez sur le bouton ci-dessus pour lancer votre premier run de tests sur l'API Agify.</p>
+  </div>
+
+  {% else %}
+  <!-- ════════════════════════════════════════════════════════════════
+       DERNIER RUN
+       ════════════════════════════════════════════════════════════════ -->
+  {% set run = latest.raw_tests_json %}
+  {% set s   = run.summary %}
+
+  <div class="section">
+    <div class="card">
+      <h2>
+        <!-- Point vert ou rouge selon le taux d'erreur -->
+        <span class="dot" style="background:{{ '#059669' if s.failed == 0 else '#dc2626' }}"></span>
+        Dernier Run
+      </h2>
+      <div class="ts">🕒 {{ run.timestamp }}</div>
+
+      <!-- ── KPIs ── -->
+      <div class="kpi-grid">
+        <div class="kpi ok">
+          <div class="value">{{ s.passed }}</div>
+          <div class="label">Tests réussis</div>
+        </div>
+        <div class="kpi {{ 'bad' if s.failed > 0 else 'ok' }}">
+          <div class="value">{{ s.failed }}</div>
+          <div class="label">Tests échoués</div>
+        </div>
+        <div class="kpi {{ 'bad' if s.error_rate > 0.3 else ('warn' if s.error_rate > 0 else 'ok') }}">
+          <div class="value">{{ (s.error_rate * 100) | round(1) }}%</div>
+          <div class="label">Taux d'erreur</div>
+        </div>
+        <div class="kpi info">
+          <div class="value">{{ s.latency_ms_avg | round(0) | int }}</div>
+          <div class="label">Latence moy. (ms)</div>
+        </div>
+        <div class="kpi info">
+          <div class="value">{{ s.latency_ms_p95 | round(0) | int }}</div>
+          <div class="label">P95 (ms)</div>
+        </div>
+      </div>
+
+      <!-- ── Tableau détaillé des 6 tests ── -->
+      <table>
+        <thead>
+          <tr>
+            <th>Test</th>
+            <th>Statut</th>
+            <th>Latence (ms)</th>
+            <th>Détails</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in run.tests %}
+          <tr>
+            <td><strong>{{ t.name }}</strong></td>
+            <td>
+              <span class="badge {{ 'pass' if t.status == 'PASS' else 'fail' }}">
+                {{ t.status }}
+              </span>
+            </td>
+            <td>{{ t.latency_ms if t.latency_ms is not none else '—' }}</td>
+            <td style="color:var(--text-secondary); font-size:13px;">{{ t.details }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       HISTORIQUE DES RUNS
+       ════════════════════════════════════════════════════════════════ -->
+  {% if history | length > 1 %}
+  <div class="section">
+    <div class="card">
+      <h2>📜 Historique des runs</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Réussis</th>
+            <th>Échoués</th>
+            <th>Taux d'erreur</th>
+            <th>Latence moy.</th>
+            <th>P95</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in history %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.timestamp }}</td>
+            <td style="color:var(--ok);">{{ r.passed }}</td>
+            <td style="color:{{ 'var(--bad)' if r.failed > 0 else 'var(--ok)' }};">{{ r.failed }}</td>
+            <td>
+              <span class="badge {{ 'fail' if r.error_rate > 0.3 else ('pass' if r.error_rate == 0 else 'pass') }}">
+                {{ (r.error_rate * 100) | round(1) }}%
+              </span>
+            </td>
+            <td>{{ r.latency_avg | round(1) }} ms</td>
+            <td>{{ r.latency_p95 | round(1) }} ms</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+</div>
+
+<!-- ── Script : appel AJAX vers /run puis rechargement ── -->
+<script>
+  async function launchRun() {
+    const btn = document.getElementById('btnRun');
+    btn.classList.add('loading');
+    try {
+      const resp = await fetch('/run');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // Run terminé avec succès → recharger le dashboard
+      window.location.href = '/dashboard';
+    } catch (err) {
+      alert('Erreur lors du run : ' + err.message);
+      btn.classList.remove('loading');
+    }
+  }
+</script>
 </body>
 </html>

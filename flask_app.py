@@ -1,25 +1,27 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, jsonify, render_template
+from storage import init_db, list_runs
 from tester.runner import run_tests
-from storage import init_db, save_run, list_runs
 
 app = Flask(__name__)
+
+# Initialise la DB au démarrage
 init_db()
 
-@app.get("/")
-def consignes():
-    return render_template("consignes.html")
-
-@app.get("/run")
+@app.route('/run')
 def run():
-    data = run_tests()
-    save_run(data)
-    return jsonify(data)
+    try:
+        data = run_tests()
+        return jsonify({"status": "ok", "data": data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.get("/dashboard")
+@app.route('/dashboard')
 def dashboard():
-    runs = list_runs()
-    return render_template("dashboard.html", runs=runs)
+    try:
+        runs = list_runs()
+        return render_template("dashboard.html", runs=runs)
+    except Exception as e:
+        return f"Erreur dashboard: {e}", 500
 
-@app.get("/health")
-def health():
-    return {"status":"ok"}
+if __name__ == '__main__':
+    app.run(debug=True)

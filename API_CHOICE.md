@@ -1,13 +1,19 @@
 # API Choice
 
-- Étudiant :
-- API choisie :
-- URL base :
-- Documentation officielle / README :
-- Auth : None / API Key / OAuth
+- Étudiant : Yassine MOUJAHID
+- API choisie : Agify
+- URL base : https://api.agify.io
+- Documentation officielle / README : https://agify.io/documentation
+- Auth : None
 - Endpoints testés :
-  - GET ...
-  - GET ...
+  - GET /?name=michael
+  - GET /?name=john
 - Hypothèses de contrat (champs attendus, types, codes) :
+  - status code 200
+  - JSON
+  - champs : name (string), age (int ou null), count (int)
 - Limites / rate limiting connu :
-- Risques (instabilité, downtime, CORS, etc.) :
+  - Pas strictement documenté mais usage raisonnable requis
+- Risques :
+  - Latence variable
+  - null possible sur age

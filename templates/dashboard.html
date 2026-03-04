@@ -1,0 +1,10 @@
+<h1>API Monitoring - Agify</h1>
+
+{% for run in runs %}
+<hr>
+<p><b>Date:</b> {{ run.summary.timestamp }}</p>
+<p>Passed: {{ run.summary.passed }}</p>
+<p>Failed: {{ run.summary.failed }}</p>
+<p>Error rate: {{ run.summary.error_rate }}</p>
+<p>Latency avg: {{ run.summary.latency_ms_avg }} ms</p>
+{% endfor %}

@@ -1,46 +1,17 @@
-name: Run API Tests
+name: Exécution planifiée des tests API
 
-# Déclenche le workflow automatiquement toutes les 1h
 on:
   schedule:
-    - cron: '0 * * * *'  # toutes les heures
-  workflow_dispatch:      # permet aussi de lancer manuellement
+    # Déclenchement automatique toutes les heures
+    - cron: '0 * * * *'
+  # Déclenchement manuel depuis l'interface GitHub
+  workflow_dispatch:
 
 jobs:
-  run-tests:
+  trigger-test-run:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Récupérer le code
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # 2️⃣ Installer Python
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      # 3️⃣ Installer les dépendances
-      - name: Install dependencies
+      - name: Lancer un run de tests via l'API
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # 4️⃣ Lancer les tests
-      - name: Run API tests
-        run: |
-          python tester/runner.py
-
-      # 5️⃣ Optionnel : Déployer sur PythonAnywhere
-      - name: Deploy to PythonAnywhere
-        if: success()
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync(`
-              curl -sS -X POST \
-              -H "Authorization: Token ${{ secrets.PA_TOKEN }}" \
-              "https://www.pythonanywhere.com/api/v0/user/${{ secrets.PA_USERNAME }}/webapps/${{ secrets.PA_WEBAPP_DOMAIN }}/reload/"
-            `, { stdio: 'inherit' });
+          curl -s https://yassine48moujahid.pythonanywhere.com/run
+          echo "Run de tests déclenché avec succès."

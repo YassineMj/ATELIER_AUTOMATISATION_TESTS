@@ -1,10 +1,39 @@
-<h1>API Monitoring - Agify</h1>
-
-{% for run in runs %}
-<hr>
-<p><b>Date:</b> {{ run.summary.timestamp }}</p>
-<p>Passed: {{ run.summary.passed }}</p>
-<p>Failed: {{ run.summary.failed }}</p>
-<p>Error rate: {{ run.summary.error_rate }}</p>
-<p>Latency avg: {{ run.summary.latency_ms_avg }} ms</p>
-{% endfor %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>API Test Dashboard</title>
+  <style>
+    body { font-family: sans-serif; background: #0b1020; color: #e9edff; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #555; padding: 8px; text-align: left; }
+    th { background-color: #23305c; }
+    .pass { color: #62d6a0; font-weight: bold; }
+    .fail { color: #ff6b7a; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Dashboard API Tests</h1>
+  <h2>Derniers runs</h2>
+  <table>
+    <tr>
+      <th>Timestamp</th>
+      <th>Passed</th>
+      <th>Failed</th>
+      <th>Error rate</th>
+      <th>Latency avg (ms)</th>
+      <th>Latency p95 (ms)</th>
+    </tr>
+    {% for run in runs %}
+    <tr>
+      <td>{{ run.timestamp }}</td>
+      <td class="pass">{{ run.passed }}</td>
+      <td class="fail">{{ run.failed }}</td>
+      <td>{{ '%.2f'|format(run.error_rate) }}</td>
+      <td>{{ run.latency_avg }}</td>
+      <td>{{ run.latency_p95 }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
